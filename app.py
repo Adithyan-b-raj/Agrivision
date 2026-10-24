@@ -8,13 +8,10 @@ import numpy as np
 import cv2
 from PIL import Image
 
-from utils import (
-    LANGUAGES,
-    translate_text,
-    generate_tts_audio,
-    create_diagnosis_pdf
-)
-from auth import (
+from src.services.translation import LANGUAGES, translate_text
+from src.services.audio import generate_tts_audio
+from src.services.report import create_diagnosis_pdf
+from src.auth.oauth import (
     load_oauth_credentials,
     get_google_auth_url,
     exchange_code_for_user_info,
@@ -699,17 +696,28 @@ def get_treatment_for_disease(raw_disease_name: str) -> dict:
 # ---------------------------------------------------------
 @st.cache_resource
 def load_trained_convnext_model():
-    """Dynamically loads ConvNeXt V2 model checkpoint with 114/115 class support."""
+    """Dynamically loads ConvNeXt V2 model checkpoint (supports Top-20, Top-40, or All 115 classes)."""
     weights_path = os.path.join(os.getcwd(), "best_convnextv2_all_classes.pth")
-    if not os.path.exists(weights_path):
-        weights_path = os.path.join(os.getcwd(), "best_convnextv2.pth")
+    json_path = os.path.join(os.getcwd(), "disease_classes.json")
+    
+    # Priority cascade: Top-20 Distinct -> Top-40 -> All-classes -> Base
+    for candidate_w, candidate_j in [
+        ("best_convnextv2_top20.pth", "top20_disease_classes.json"),
+        ("best_convnextv2_top40.pth", "top40_disease_classes.json"),
+        ("best_convnextv2_all_classes.pth", "disease_classes.json"),
+        ("best_convnextv2.pth", "disease_classes.json")
+    ]:
+        if os.path.exists(os.path.join(os.getcwd(), candidate_w)):
+            weights_path = os.path.join(os.getcwd(), candidate_w)
+            if os.path.exists(os.path.join(os.getcwd(), candidate_j)):
+                json_path = os.path.join(os.getcwd(), candidate_j)
+            break
         
     classes_list = [
         "citrus canker", "wheat stripe rust", "wheat head scab", "grape downy mildew",
         "wheat powdery mildew", "apple scab", "soybean frog eye leaf spot", "bean rust"
     ]
     
-    json_path = os.path.join(os.getcwd(), "disease_classes.json")
     if os.path.exists(json_path):
         try:
             with open(json_path, 'r') as f:
@@ -748,11 +756,40 @@ def load_trained_convnext_model():
         print(f"PyTorch model load notice: {e}")
         return None, classes_list
 
+@st.cache_resource
+def load_rtdetr_model():
+    """Loads RT-DETR (prefers fine-tuned leaf disease checkpoint, else standard RT-DETR)."""
+    try:
+        from ultralytics import RTDETR
+        for candidate in ["best_rtdetr_leaf_disease.pt", "rtdetr_plantseg.pt", "rtdetr-l.pt"]:
+            p = os.path.join(os.getcwd(), candidate)
+            if os.path.exists(p):
+                return RTDETR(p), candidate
+            if os.path.exists(candidate):
+                return RTDETR(candidate), candidate
+        return RTDETR("rtdetr-l.pt"), "rtdetr-l.pt"
+    except Exception as e:
+        print(f"RT-DETR load notice: {e}")
+        return None, None
+
+@st.cache_resource
+def load_sam2_model():
+    """Loads Segment Anything Model 2 (SAM 2.1)."""
+    try:
+        from ultralytics import SAM
+        weights_path = os.path.join(os.getcwd(), "sam2.1_t.pt")
+        if not os.path.exists(weights_path):
+            weights_path = "sam2.1_t.pt"
+        return SAM(weights_path)
+    except Exception as e:
+        print(f"SAM 2 load notice: {e}")
+        return None
+
 def predict_leaf_disease(image: Image.Image):
     """
     Executes the multimodal diagnostic suite:
-    1. RT-DETR Bounding Box Lesion Localization (pure red bounding boxes & reticles)
-    2. SAM 2 Masking & Grad-CAM++ Explainability
+    1. RT-DETR Bounding Box Lesion Localization (Ultralytics Real-Time Detection Transformer)
+    2. SAM 2 Promptable Instance Masking (Meta AI Segment Anything Model 2) & Explainability Heatmap
     3. ConvNeXt V2 Neural Classification (Top-1, Top-3 distribution, calibrated confidence)
     """
     img_rgb = image.convert("RGB")
@@ -797,51 +834,110 @@ def predict_leaf_disease(image: Image.Image):
         confidence = 0.942
         top_3 = [("Bean Rust", 0.942), ("Wheat Powdery Mildew", 0.038), ("Wheat Stem Rust", 0.020)]
 
-    # 1. Computer Vision Lesion Segmentation & Masking
-    hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
-    lower_spot = np.array([10, 40, 30])
-    upper_spot = np.array([35, 255, 220])
-    mask = cv2.inRange(hsv, lower_spot, upper_spot)
+    # STAGE 1: Real RT-DETR Lesion Detection
+    rtdetr_model, model_source = load_rtdetr_model()
+    sam2_model = load_sam2_model()
 
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # STAGE 1: Pure Detection (RT-DETR Bounding Boxes + Centroid Reticles)
     detection_img = img_np.copy()
-    box_count = 0
-    total_lesion_area = 0
-
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area > 80:
-            total_lesion_area += area
-            box_count += 1
-            x, y, bw, bh = cv2.boundingRect(cnt)
-            # High-visibility crimson bounding box
-            cv2.rectangle(detection_img, (x, y), (x + bw, y + bh), (220, 20, 60), 3)
-            # Centroid crosshair
-            cx, cy = x + bw // 2, y + bh // 2
-            cv2.drawMarker(detection_img, (cx, cy), (0, 255, 255), markerType=cv2.MARKER_CROSS, markerSize=12, thickness=2)
-            # Lesion tag pill
-            tag_text = f"#{box_count}"
-            (tw, th), _ = cv2.getTextSize(tag_text, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
-            cv2.rectangle(detection_img, (x, max(0, y - th - 6)), (x + tw + 6, max(th + 6, y)), (220, 20, 60), -1)
-            cv2.putText(detection_img, tag_text, (x + 3, max(th, y - 4)),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
-
-    # STAGE 2A: SAM 2 Pixel Mask Overlay
     segmentation_img = img_np.copy()
-    overlay = np.zeros_like(img_np)
-    # Bright cyan/emerald mask fill
-    cv2.drawContours(overlay, contours, -1, (0, 230, 180), thickness=cv2.FILLED)
-    segmentation_img = cv2.addWeighted(segmentation_img, 0.68, overlay, 0.32, 0)
-    # Golden border contours
-    cv2.drawContours(segmentation_img, contours, -1, (255, 215, 0), 2)
+    boxes = []
+    box_count = 0
 
+    if rtdetr_model is not None:
+        try:
+            det_res = rtdetr_model.predict(img_np, conf=0.20, verbose=False)[0]
+            if det_res.boxes is not None and len(det_res.boxes) > 0:
+                raw_boxes = det_res.boxes.xyxy.cpu().numpy()
+                if model_source != "rtdetr-l.pt":
+                    boxes = list(raw_boxes)
+                else:
+                    # Filter out full-image COCO 'potted plant' detections
+                    for rb in raw_boxes:
+                        box_area = (rb[2] - rb[0]) * (rb[3] - rb[1])
+                        if 100 < box_area < (0.35 * h * w):
+                            boxes.append(rb)
+        except Exception as e:
+            print(f"RT-DETR inference error: {e}")
+
+    # Fallback to focal lesion contour boxes if using base RT-DETR without fine-tuned weights
+    if len(boxes) == 0:
+        hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
+        lower_spot = np.array([10, 40, 30])
+        upper_spot = np.array([35, 255, 220])
+        mask_fallback = cv2.inRange(hsv, lower_spot, upper_spot)
+        contours, _ = cv2.findContours(mask_fallback, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        fallback_boxes = []
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if 80 < area < (0.35 * h * w):
+                x, y, bw, bh = cv2.boundingRect(cnt)
+                fallback_boxes.append([x, y, x + bw, y + bh])
+        if len(fallback_boxes) > 0:
+            boxes = fallback_boxes
+
+    # Limit to top focal lesion boxes to keep visualization crisp & fast
+    boxes = boxes[:25]
+
+    # Render RT-DETR Bounding Boxes + Reticles
+    for b in boxes:
+        box_count += 1
+        x1, y1, x2, y2 = [int(v) for v in b]
+        bw, bh = x2 - x1, y2 - y1
+        # High-visibility crimson bounding box
+        cv2.rectangle(detection_img, (x1, y1), (x2, y2), (220, 20, 60), 3)
+        # Centroid crosshair
+        cx, cy = x1 + bw // 2, y1 + bh // 2
+        cv2.drawMarker(detection_img, (cx, cy), (0, 255, 255), markerType=cv2.MARKER_CROSS, markerSize=12, thickness=2)
+        # Lesion tag pill
+        tag_text = f"#{box_count}"
+        (tw, th), _ = cv2.getTextSize(tag_text, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+        cv2.rectangle(detection_img, (x1, max(0, y1 - th - 6)), (x1 + tw + 6, max(th + 6, y1)), (220, 20, 60), -1)
+        cv2.putText(detection_img, tag_text, (x1 + 3, max(th, y1 - 4)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1, cv2.LINE_AA)
+
+    # STAGE 2A: Real SAM 2 Pixel Mask Overlay
+    combined_binary_mask = np.zeros((h, w), dtype=np.uint8)
+    sam2_success = False
+
+    if sam2_model is not None:
+        try:
+            if len(boxes) > 0:
+                sam_res = sam2_model.predict(img_np, bboxes=np.array(boxes, dtype=np.float32), verbose=False)[0]
+            else:
+                sam_res = sam2_model.predict(img_np, verbose=False)[0]
+
+            if sam_res.masks is not None and len(sam_res.masks) > 0:
+                masks_data = sam_res.masks.data.cpu().numpy()
+                combined_bool = np.any(masks_data > 0.5, axis=0)
+                combined_binary_mask = (combined_bool.astype(np.uint8)) * 255
+                if combined_binary_mask.shape != (h, w):
+                    combined_binary_mask = cv2.resize(combined_binary_mask, (w, h), interpolation=cv2.INTER_NEAREST)
+                sam2_success = True
+        except Exception as e:
+            print(f"SAM 2 inference error: {e}")
+
+    # Fallback to HSV contour masks if SAM 2 produced no mask
+    if not sam2_success or np.sum(combined_binary_mask > 0) == 0:
+        hsv = cv2.cvtColor(img_np, cv2.COLOR_RGB2HSV)
+        lower_spot = np.array([10, 40, 30])
+        upper_spot = np.array([35, 255, 220])
+        combined_binary_mask = cv2.inRange(hsv, lower_spot, upper_spot)
+
+    # Calculate real lesion area from mask
+    total_lesion_area = int(np.sum(combined_binary_mask > 0))
     coverage_ratio = total_lesion_area / (h * w) if total_lesion_area > 0 else 0.08
-    coverage_ratio = min(max(coverage_ratio, 0.08), 0.55)
+    coverage_ratio = min(max(coverage_ratio, 0.05), 0.75)
 
-    # STAGE 2B: Grad-CAM++ Attention Heatmap
-    blurred = cv2.GaussianBlur(mask, (35, 35), 0)
+    # Overlay SAM 2 mask on image (Bright cyan/emerald fill + golden border contours)
+    overlay = np.zeros_like(img_np)
+    overlay[combined_binary_mask > 0] = [0, 230, 180]
+    segmentation_img = cv2.addWeighted(segmentation_img, 0.68, overlay, 0.32, 0)
+    
+    seg_contours, _ = cv2.findContours(combined_binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cv2.drawContours(segmentation_img, seg_contours, -1, (255, 215, 0), 2)
+
+    # STAGE 2B: Grad-CAM++ / Attention Heatmap
+    blurred = cv2.GaussianBlur(combined_binary_mask, (35, 35), 0)
     heatmap = cv2.applyColorMap(blurred, cv2.COLORMAP_JET)
     heatmap_rgb = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
     gradcam_img = cv2.addWeighted(img_np, 0.60, heatmap_rgb, 0.40, 0)
@@ -920,7 +1016,9 @@ with tabs[0]:
             help="High-resolution in-the-wild leaf photography supported."
         )
 
-    sample_img_path = "photo_2026-10-24_01-39-50.jpg"
+    sample_img_path = "photo_2026-10-24_01-39-50.png"
+    if not os.path.exists(sample_img_path):
+        sample_img_path = "photo_2026-10-24_16-36-24.jpg"
     use_sample = False
     with up_col2:
         st.markdown("#### ⚡ Quick Field Demo")

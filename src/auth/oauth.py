@@ -1,54 +1,32 @@
 """
-Google OAuth 2.0 Authentication Module for AgriVision AI
-Credentials are read strictly from environment keys (.env / os.environ / st.secrets).
-No credentials entry or secret management is required in the frontend.
+Google OAuth 2.0 Credentials and Token Management.
+Reads strictly from environment keys (.env / os.environ / st.secrets).
 """
 
 import os
 import urllib.parse
 import requests
-import streamlit as st
 from dotenv import load_dotenv
 
 # Automatically load environment variables from .env file
 load_dotenv()
 
-DEFAULT_REDIRECT_URI = "http://localhost:8501"
+DEFAULT_REDIRECT_URI = "http://localhost:8000"
 
-def load_oauth_credentials():
+def load_oauth_credentials(default_redirect: str = None):
     """
-    Loads Google OAuth 2.0 credentials from environment variables / .env,
-    with fallback to st.secrets.
+    Loads Google OAuth 2.0 credentials from environment variables / .env.
+    Calls load_dotenv(override=True) so changes to .env take effect immediately without server restart.
+    Normalizes trailing slash on root origin URIs so http://localhost:8000/ matches Google Cloud Console's http://localhost:8000.
     Returns: (client_id, client_secret, redirect_uri)
     """
-    # 1. Environment variables (.env or system env)
+    load_dotenv(override=True)
+    fallback_redirect = (default_redirect or DEFAULT_REDIRECT_URI).rstrip("/")
     client_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
-    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", DEFAULT_REDIRECT_URI).strip()
+    redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", fallback_redirect).strip().rstrip("/")
 
-    # 2. Fallback to st.secrets if not set in os.environ
-    if not client_id or not client_secret:
-        try:
-            if hasattr(st, "secrets"):
-                if "GOOGLE_CLIENT_ID" in st.secrets:
-                    client_id = client_id or st.secrets["GOOGLE_CLIENT_ID"].strip()
-                if "GOOGLE_CLIENT_SECRET" in st.secrets:
-                    client_secret = client_secret or st.secrets["GOOGLE_CLIENT_SECRET"].strip()
-                if "google_client_id" in st.secrets:
-                    client_id = client_id or st.secrets["google_client_id"].strip()
-                if "google_client_secret" in st.secrets:
-                    client_secret = client_secret or st.secrets["google_client_secret"].strip()
-                if "google" in st.secrets:
-                    client_id = client_id or st.secrets["google"].get("client_id", "").strip()
-                    client_secret = client_secret or st.secrets["google"].get("client_secret", "").strip()
-                if "GOOGLE_REDIRECT_URI" in st.secrets:
-                    redirect_uri = st.secrets["GOOGLE_REDIRECT_URI"].strip()
-                elif "redirect_uri" in st.secrets:
-                    redirect_uri = st.secrets["redirect_uri"].strip()
-        except Exception:
-            pass
-
-    return client_id, client_secret, redirect_uri or DEFAULT_REDIRECT_URI
+    return client_id, client_secret, redirect_uri or fallback_redirect
 
 
 def get_google_auth_url(client_id: str, redirect_uri: str, state: str = "agrivision_oauth") -> str:
@@ -99,14 +77,14 @@ def exchange_code_for_user_info(code: str, client_id: str, client_secret: str, r
         user_resp = requests.get(
             userinfo_url,
             headers={"Authorization": f"Bearer {access_token}"},
-            timeout=12
+            timeout=10
         )
-        
-        if user_resp.status_code != 200:
-            return False, f"Failed to fetch user profile from Google ({user_resp.status_code}): {user_resp.text}"
+        user_json = user_resp.json()
 
-        user_info = user_resp.json()
-        return True, user_info
+        if user_resp.status_code != 200:
+            return False, f"Failed to retrieve user profile ({user_resp.status_code})"
+
+        return True, user_json
 
     except requests.exceptions.RequestException as e:
         return False, f"Network communication error with Google OAuth servers: {str(e)}"

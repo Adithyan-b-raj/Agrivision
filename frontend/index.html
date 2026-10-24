@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AgriVision Pro — Clinical Plant Diagnostic Suite</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌿</text></svg>">
+
+    <!-- Typography: Plus Jakarta Sans, Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Luminous Clinical White Design System -->
+    <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body class="min-h-screen flex flex-col selection:bg-emerald-100 selection:text-emerald-900">
+
+    <!-- ===================================================================
+         STICKY GLASSMORPHIC 2-TIER NAVIGATION HEADER (ZERO OVERFLOW)
+         =================================================================== -->
+    <header class="glass-navbar sticky top-0 z-40">
+        <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-2.5">
+            
+            <!-- TIER 1: Brand Identity (Left) + System Telemetry, Language & User (Right) -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                
+                <!-- Brand Identity -->
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white flex items-center justify-center text-xl shadow-sm">
+                        🌿
+                    </div>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 whitespace-nowrap">AgriVision Pro</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                                v3.0 Clinical
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 truncate hidden sm:block">
+                            Multimodal Plant Pathology & Decision Support Suite
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Controls: Active Model Pill, Language Selector & User Chip -->
+                <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
+                    <!-- Live Neural Backbone Status Pill -->
+                    <div class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50/90 border border-emerald-200 text-xs whitespace-nowrap shrink-0">
+                        <span class="pulse-dot"></span>
+                        <span class="font-semibold text-emerald-950 whitespace-nowrap">ConvNeXt V2</span>
+                        <span class="text-emerald-300">|</span>
+                        <span id="active-model-cls-count" class="font-mono-tech font-bold text-emerald-700 whitespace-nowrap">115 Classes</span>
+                    </div>
+
+                    <!-- Regional Language Selector -->
+                    <div class="relative shrink-0">
+                        <select id="lang-selector" aria-label="Interface Language" class="appearance-none bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 pl-3 pr-7 py-1.5 rounded-xl border border-slate-200 shadow-2xs cursor-pointer focus:outline-none focus:border-emerald-500 whitespace-nowrap">
+                            <option value="en">🌐 English</option>
+                            <option value="ml">🌐 മലയാളം (Malayalam)</option>
+                            <option value="hi">🌐 हिन्दी (Hindi)</option>
+                            <option value="ta">🌐 தமிழ் (Tamil)</option>
+                        </select>
+                        <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">▼</span>
+                    </div>
+
+                    <!-- Authenticated User Profile Chip -->
+                    <div id="navbar-user-chip" class="shrink-0"></div>
+                </div>
+            </div>
+
+            <!-- TIER 2: Full-Width 4-Tab Segmented Navigation Bar (No Scrollbar, No Clipping) -->
+            <nav class="nav-pill-grid" aria-label="Main Sections">
+                <button type="button" data-tab="diagnosis" onclick="window.AppController.switchTab('diagnosis')" class="nav-pill-btn active">
+                    <span class="shrink-0">🔬</span>
+                    <span data-i18n="tab_diagnosis">Live Diagnosis & Segmentation</span>
+                </button>
+                <button type="button" data-tab="voice" onclick="window.AppController.switchTab('voice')" class="nav-pill-btn">
+                    <span class="shrink-0">🎙️</span>
+                    <span data-i18n="tab_voice">Voice Symptom Input (STT)</span>
+                </button>
+                <button type="button" data-tab="benchmark" onclick="window.AppController.switchTab('benchmark')" class="nav-pill-btn">
+                    <span class="shrink-0">📊</span>
+                    <span data-i18n="tab_benchmark">Backbone Comparison</span>
+                </button>
+                <button type="button" data-tab="report" onclick="window.AppController.switchTab('report')" class="nav-pill-btn">
+                    <span class="shrink-0">📄</span>
+                    <span data-i18n="tab_report">Clinical PDF Report</span>
+                </button>
+            </nav>
+
+        </div>
+    </header>
+
+    <!-- ===================================================================
+         MAIN WORKSTATION CONTAINER
+         =================================================================== -->
+    <main class="flex-1 w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- 4-STAGE RESPONSIVE PIPELINE STEPPER -->
+        <div class="studio-card p-3 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <div id="pipeline-step-1" class="pipeline-step step-active">
+                    <span class="step-circle font-mono-tech">01</span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 truncate" data-i18n="step_1">Image Acquisition</div>
+                        <div class="text-[10px] text-slate-400 truncate">RGB Foliar Specimen</div>
+                    </div>
+                </div>
+
+                <div id="pipeline-step-2" class="pipeline-step">
+                    <span class="step-circle font-mono-tech">02</span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 truncate" data-i18n="step_2">RT-DETR Lesion Detection</div>
+                        <div class="text-[10px] text-slate-400 truncate">Spatial Bounding Reticles</div>
+                    </div>
+                </div>
+
+                <div id="pipeline-step-3" class="pipeline-step">
+                    <span class="step-circle font-mono-tech">03</span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 truncate" data-i18n="step_3">SAM-2 Pixel Masking</div>
+                        <div class="text-[10px] text-slate-400 truncate">Instance Mask & Grad-CAM++</div>
+                    </div>
+                </div>
+
+                <div id="pipeline-step-4" class="pipeline-step">
+                    <span class="step-circle font-mono-tech">04</span>
+                    <div class="min-w-0">
+                        <div class="text-xs font-bold text-slate-800 truncate" data-i18n="step_4">ConvNeXt V2 & Rx Plan</div>
+                        <div class="text-[10px] text-slate-400 truncate">115-Class Diagnosis & Audio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===============================================================
+             SECTION 1: LIVE DIAGNOSIS & 3-STAGE CLINICAL SUITE
+             =============================================================== -->
+        <section id="section-diagnosis" class="section-fade">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                <!-- Left: Interactive Drag & Drop Uploader (7 cols) -->
+                <div class="lg:col-span-7 studio-card p-5 sm:p-6 flex flex-col justify-between">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                        <div class="min-w-0">
+                            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">Step 01 • Specimen Input</span>
+                            <h2 class="text-base sm:text-lg font-extrabold text-slate-900" data-i18n="upload_title">Upload Specimen Leaf Image</h2>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 font-mono-tech text-xs font-semibold whitespace-nowrap shrink-0">
+                            JPG • PNG • WEBP
+                        </span>
+                    </div>
+
+                    <div id="leaf-dropzone" class="upload-dropzone p-6 sm:p-7 text-center flex flex-col items-center justify-center min-h-[168px]">
+                        <input id="leaf-file-input" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" />
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-2xl mb-3 shadow-2xs shrink-0">
+                            📥
+                        </div>
+                        <p class="text-xs sm:text-sm font-bold text-slate-800 mb-1 max-w-md" data-i18n="upload_sub">
+                            Drag & drop high-resolution leaf photography (JPG, PNG) or click to browse
+                        </p>
+                        <p class="text-[11px] sm:text-xs text-slate-400 max-w-md">
+                            Automatic 224×224 normalization, RT-DETR lesion bounding & SAM 2.1 pixel segmentation
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right: Instant Field Specimen Demo & Neural Specs (5 cols) -->
+                <div class="lg:col-span-5 studio-card p-5 sm:p-6 flex flex-col justify-between bg-gradient-to-br from-white via-white to-emerald-50/50">
+                    <div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                            <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 whitespace-nowrap">
+                                ⚡ One-Click Field Verification
+                            </span>
+                            <span class="text-xs font-mono-tech text-slate-400 whitespace-nowrap">80.8% Top-1 • 97.2% Top-5</span>
+                        </div>
+                        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 mb-1" data-i18n="demo_title">Instant Field Specimen Demo</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed mb-4" data-i18n="demo_sub">
+                            Execute the real 3-stage neural pipeline on an in-the-wild diseased leaf sample to inspect RT-DETR bounding reticles, SAM 2 masks, and ConvNeXt V2 differential diagnosis.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-3 gap-1.5 text-center p-2.5 rounded-xl bg-white border border-slate-200/80 text-xs">
+                            <div class="min-w-0 px-1">
+                                <div class="text-[10px] font-bold uppercase text-slate-400 truncate">Detection</div>
+                                <div class="font-bold text-slate-800 mt-0.5 truncate">RT-DETR-L</div>
+                            </div>
+                            <div class="border-x border-slate-100 min-w-0 px-1">
+                                <div class="text-[10px] font-bold uppercase text-slate-400 truncate">Segmentation</div>
+                                <div class="font-bold text-emerald-700 mt-0.5 truncate">SAM 2.1 Tiny</div>
+                            </div>
+                            <div class="min-w-0 px-1">
+                                <div class="text-[10px] font-bold uppercase text-slate-400 truncate">Classifier</div>
+                                <div class="font-bold text-sky-700 mt-0.5 truncate">ConvNeXt V2</div>
+                            </div>
+                        </div>
+
+                        <button id="btn-load-sample" type="button" class="btn-emerald w-full py-3 text-xs sm:text-sm">
+                            <span class="shrink-0">🌿</span>
+                            <span data-i18n="btn_load_sample">Load Diseased Field Sample</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic 3-Stage Diagnostic Suite & Prescription Output Container -->
+            <div id="diagnosis-results-area"></div>
+        </section>
+
+        <!-- ===============================================================
+             SECTION 2: MULTIMODAL VOICE SYMPTOM INPUT (WHISPER STT)
+             =============================================================== -->
+        <section id="section-voice" class="hidden section-fade">
+            <div class="mb-5">
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900" data-i18n="voice_heading">Multimodal Voice Symptom Input (Whisper STT)</h2>
+                <p class="text-xs text-slate-500 mt-0.5" data-i18n="voice_sub">
+                    Describe plant symptoms naturally in English, Malayalam, Hindi, or Tamil for instant NLP entity extraction.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <!-- Left Console: Mic + Audio Upload + Regional Sample Selector (5 cols) -->
+                <div class="lg:col-span-5 studio-card p-5 sm:p-6 space-y-4">
+                    <div class="flex items-center gap-3.5 pb-4 border-b border-slate-100">
+                        <div class="w-11 h-11 shrink-0 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-2xl">
+                            🎙️
+                        </div>
+                        <div class="min-w-0">
+                            <h3 class="text-base font-bold text-slate-900">Audio Symptom Console</h3>
+                            <p class="text-xs text-slate-500">Live Web Speech Mic, WAV/MP3 Upload or Regional Preset</p>
+                        </div>
+                    </div>
+
+                    <!-- Live Microphone Trigger -->
+                    <div>
+                        <button id="btn-live-mic" type="button" class="btn-white w-full py-3 text-xs font-bold border-slate-300">
+                            <span class="shrink-0">🎙️</span>
+                            <span>Speak Live into Microphone</span>
+                        </button>
+                    </div>
+
+                    <!-- Audio File Upload Dropzone -->
+                    <div id="voice-audio-dropzone" class="upload-dropzone p-4 text-center">
+                        <input id="voice-audio-input" type="file" accept=".wav,.mp3,.m4a,.webm" class="hidden" />
+                        <div class="text-xs font-bold text-slate-700">📁 Upload Recorded Voice Memo (.WAV / .MP3)</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5">Click to browse field audio recording</div>
+                    </div>
+
+                    <div class="relative flex py-1 items-center">
+                        <div class="flex-grow border-t border-slate-200"></div>
+                        <span class="flex-shrink mx-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">OR Regional Spoken Test</span>
+                        <div class="flex-grow border-t border-slate-200"></div>
+                    </div>
+
+                    <!-- Regional Sample Selector -->
+                    <div>
+                        <label for="stt-sample-select" class="block text-xs font-bold text-slate-700 mb-1.5">
+                            Select Regional Spoken Symptom Sample:
+                        </label>
+                        <select id="stt-sample-select" class="w-full bg-slate-50 text-xs font-medium text-slate-800 p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="citrus_en">🇬🇧 English: "I notice raised corky brown lesions and yellow halos on citrus leaves."</option>
+                            <option value="citrus_ml">🇮🇳 Malayalam: "നാരക ഇലകളിൽ തവിട്ടുനിറത്തിലുള്ള ഉയർന്ന പുള്ളികളും മഞ്ഞ വലയങ്ങളും കാണുന്നുണ്ട്."</option>
+                            <option value="citrus_hi">🇮🇳 Hindi: "नींबू के पत्तों पर भूरे रंग के उभरे हुए धब्बे और पीले घेरे साफ दिखाई दे रहे हैं।"</option>
+                            <option value="bean_ta">🇮🇳 Tamil: "பீன்ஸ் இலைகளின் அடிப்பகுதியில் செம்பழுப்பு நிறத் தூள் கொப்புளங்கள் உள்ளன."</option>
+                            <option value="wheat_en">🇬🇧 English: "My wheat crop has bright yellow-orange powdery stripes along the leaf veins."</option>
+                        </select>
+                    </div>
+
+                    <!-- Optional Custom Symptom Textbox -->
+                    <div>
+                        <label for="stt-custom-textarea" class="block text-xs font-bold text-slate-700 mb-1.5">
+                            Or Type / Edit Spoken Transcript:
+                        </label>
+                        <textarea id="stt-custom-textarea" rows="2" placeholder="Leave blank to use the selected regional sample above, or type custom symptoms..." class="w-full bg-slate-50 text-xs text-slate-800 p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500"></textarea>
+                    </div>
+
+                    <button id="btn-run-stt" type="button" class="btn-emerald w-full py-3 text-xs sm:text-sm">
+                        <span class="shrink-0">✨</span>
+                        <span data-i18n="btn_transcribe">Transcribe & Extract Entities</span>
+                    </button>
+                </div>
+
+                <!-- Right Output Panel: Transcribed Speech & 4 Entity Cards (7 cols) -->
+                <div id="stt-output-panel" class="lg:col-span-7 min-w-0">
+                    <div class="studio-card p-8 sm:p-10 text-center">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center text-2xl mx-auto mb-3">
+                            🗣️
+                        </div>
+                        <h4 class="text-base font-bold text-slate-900 mb-1">Ready for Voice Symptom Resolution</h4>
+                        <p class="text-xs text-slate-500 max-w-md mx-auto">
+                            Select a regional spoken sample or use your microphone, then click <b>Transcribe & Extract Entities</b> to run Whisper STT and agricultural entity resolution.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===============================================================
+             SECTION 3: MULTIPLE BACKBONE COMPARISON (PLANTSEG BENCHMARK)
+             =============================================================== -->
+        <section id="section-benchmark" class="hidden section-fade">
+            <div class="mb-5">
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900" data-i18n="bench_heading">Multiple Backbone Comparison (PlantSeg Benchmark)</h2>
+                <p class="text-xs text-slate-500 mt-0.5" data-i18n="bench_sub">
+                    Empirical evaluation on 11,400+ in-the-wild plant disease images across 115 classes (Tianqi Wei et al.).
+                </p>
+            </div>
+            <div id="benchmark-content-area"></div>
+        </section>
+
+        <!-- ===============================================================
+             SECTION 4: AI-GENERATED CLINICAL DIAGNOSTIC REPORT (PDF)
+             =============================================================== -->
+        <section id="section-report" class="hidden section-fade">
+            <div class="mb-5">
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900" data-i18n="report_heading">AI-Generated Clinical Diagnostic Report</h2>
+                <p class="text-xs text-slate-500 mt-0.5" data-i18n="report_sub">
+                    Official pathological record with visual lesion mapping, differential diagnosis, and curative regimen.
+                </p>
+            </div>
+            <div id="report-content-area"></div>
+        </section>
+
+    </main>
+
+    <!-- ===================================================================
+         FOOTER (ALWAYS ANCHORED AT VIEWPORT BOTTOM VIA FLEX MT-AUTO)
+         =================================================================== -->
+    <footer class="mt-auto w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-5 border-t border-slate-200/80 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-slate-700 font-bold">🌿 AgriVision Pro v3.0</span>
+            <span>•</span>
+            <span>Dept. of Computer Science & Engineering, STIST Trivandrum</span>
+        </div>
+        <div class="font-mono-tech text-[11px]">
+            ConvNeXt V2 (Tiny) • RT-DETR-L • Meta SAM 2.1 • PlantSeg 115-Class Reference
+        </div>
+    </footer>
+
+    <!-- Modular Frontend Scripts -->
+    <script src="/static/js/i18n.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/sections/diagnosis.js"></script>
+    <script src="/static/js/sections/voice.js"></script>
+    <script src="/static/js/sections/benchmark.js"></script>
+    <script src="/static/js/sections/report.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
