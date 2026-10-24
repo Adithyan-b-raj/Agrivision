@@ -54,7 +54,8 @@ Evaluated against published PlantSeg baseline models on an **NVIDIA Tesla GPU**:
 | **Final Training Loss** | **0.3778** | CrossEntropyLoss with Label Smoothing ($\alpha=0.05$) |
 | **Top-1 Accuracy (Full 115-Class)** | **80.80%** | Exceeds published PlantSeg baseline (74.8%–79.4%) |
 | **Inference Latency** | **14.2 ms** | Real-time edge & CPU compatible |
-| **Lesion Localization Recall** | **91.4%** | Fine-tuned RT-DETR-L transformer |
+| **Lesion Detection (mAP@50)** | **32.58%** | 47.90% Precision across 5,217 foliar instances |
+| **Lesion Strict IoU (mAP@50-95)** | **16.90%** | RT-DETR-L on dense pustules (up to 456/leaf) |
 | **Zero-Shot Masking mIoU** | **78.6%** | Meta SAM 2.1 prompted instance segmentation |
 
 ### Multi-Backbone Comparison Matrix

@@ -97,11 +97,17 @@ Traditional one-stage detectors (like YOLOv5/v8) rely on hand-crafted Non-Maximu
 2. **IoU-Aware Query Selection**: Selects top-$K$ feature queries based on predicted confidence and spatial intersection-over-union.
 3. **End-to-End Hungarian Loss**: Completely eliminates NMS post-processing, providing consistent **14–18 ms latency**.
 
-### Trained Weights & Checkpoint
-The detection backbone is fine-tuned on the foliar pathology bounding dataset:
+### Trained Weights & Empirical Validation Results
+The detection backbone is fine-tuned on foliar pathology lesion reticles:
 - File: [`trained data/best_rtdetr_leaf_disease.pt`](file:///C:/projects/leaf%20model%20training/trained%20data/best_rtdetr_leaf_disease.pt)
+- Parameters: 315 layers, 31.98M parameters, 105.3 GFLOPs (Ultralytics RT-DETR-L fused)
 - Target Class: `{0: 'lesion'}`
-- Function: Outputs coordinates $[x_1, y_1, x_2, y_2]$ and confidence score $s \in [0, 1]$ for every necrotic lesion, pustule, or chlorotic halo on the leaf surface.
+- Evaluation Split: 238 in-the-wild images with 5,217 dense lesion instances (up to 456 pustules/leaf)
+- **mAP@50 (Detection Precision)**: **32.58%**
+- **mAP@50-95 (Strict Multi-IoU)**: **16.90%**
+- **Box Precision (P)**: **47.90%**
+- **Box Recall (R)**: **34.70%**
+- Function: Outputs coordinates $[x_1, y_1, x_2, y_2]$ and confidence score $s \in [0, 1]$ for every necrotic lesion, pustule, or chlorotic halo on the leaf surface, which serve as prompt bounding boxes for Stage 2 (Meta SAM 2.1).
 
 ---
 
