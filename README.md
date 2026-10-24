@@ -103,6 +103,7 @@ Agrivision/
 ├── colab_training_notebook.ipynb            # Google Colab segmentation training notebook
 ├── train_convnextv2_colab.ipynb             # Google Colab classifier fine-tuning notebook
 ├── BENCHMARK_RESULTS.md                     # Comprehensive academic benchmark evaluation report
+├── EXPLANATION.md                           # Exhaustive technical reference & viva defense guide
 ├── requirements.txt                         # Python dependencies
 ├── .env.example                             # Environment keys template
 ├── .gitignore                               # Git ignore configuration
