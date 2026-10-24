@@ -38,31 +38,30 @@
 * **Active Weights:** [`trained data/best_convnextv2_top20.pth`](trained%20data/best_convnextv2_top20.pth)
 
 ```text
-=== ConvNeXt V2 Training on Top 20 Distinct Pathologies (12 Epochs) ===
+=== Starting ConvNeXt V2 Training on Top 20 Distinct Pathologies (12 Epochs) ===
 
-Epoch [01/12] | Train Loss: 2.1045 | Train Acc: 58.32% | Val Top-1: 74.20% | Val Top-3: 91.50%
-   --> 💾 Checkpoint saved: 74.20%
-Epoch [02/12] | Train Loss: 1.2180 | Train Acc: 82.15% | Val Top-1: 81.65% | Val Top-3: 94.80%
-   --> 💾 Checkpoint saved: 81.65%
-Epoch [03/12] | Train Loss: 0.8942 | Train Acc: 88.40% | Val Top-1: 85.10% | Val Top-3: 96.20%
-   --> 💾 Checkpoint saved: 85.10%
-Epoch [04/12] | Train Loss: 0.6830 | Train Acc: 92.10% | Val Top-1: 87.30% | Val Top-3: 97.40%
-   --> 💾 Checkpoint saved: 87.30%
-Epoch [05/12] | Train Loss: 0.5218 | Train Acc: 94.85% | Val Top-1: 88.90% | Val Top-3: 98.10%
-   --> 💾 Checkpoint saved: 88.90%
+Epoch [01/12] | Train Loss: 1.4381 | Train Acc: 62.90% | Val Top-1: 84.71% | Val Top-3: 98.59%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 84.71%)
+Epoch [02/12] | Train Loss: 0.6735 | Train Acc: 87.69% | Val Top-1: 86.92% | Val Top-3: 99.20%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 86.92%)
+Epoch [03/12] | Train Loss: 0.5581 | Train Acc: 91.85% | Val Top-1: 88.13% | Val Top-3: 98.99%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 88.13%)
+Epoch [04/12] | Train Loss: 0.5120 | Train Acc: 93.74% | Val Top-1: 88.93% | Val Top-3: 98.99%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 88.93%)
+Epoch [05/12] | Train Loss: 0.4631 | Train Acc: 95.84% | Val Top-1: 89.34% | Val Top-3: 99.20%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 89.34%)
 Epoch [06/12] | Train Loss: 0.4432 | Train Acc: 96.48% | Val Top-1: 89.54% | Val Top-3: 98.79%
-   --> 💾 Checkpoint saved: 89.54%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 89.54%)
 Epoch [07/12] | Train Loss: 0.4213 | Train Acc: 97.08% | Val Top-1: 89.94% | Val Top-3: 98.99%
-   --> 💾 Checkpoint saved: 89.94%
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 89.94%)
 Epoch [08/12] | Train Loss: 0.4044 | Train Acc: 98.01% | Val Top-1: 89.13% | Val Top-3: 97.99%
 Epoch [09/12] | Train Loss: 0.3997 | Train Acc: 97.97% | Val Top-1: 89.74% | Val Top-3: 98.39%
 Epoch [10/12] | Train Loss: 0.3822 | Train Acc: 98.72% | Val Top-1: 89.94% | Val Top-3: 98.39%
 Epoch [11/12] | Train Loss: 0.3829 | Train Acc: 98.68% | Val Top-1: 90.34% | Val Top-3: 98.39%
-   --> 💾 Checkpoint saved: 90.34% (Official Best Checkpoint)
+   --> 💾 Checkpoint saved to /kaggle/working/best_convnextv2_top20.pth (New Best Top-1: 90.34%)
 Epoch [12/12] | Train Loss: 0.3778 | Train Acc: 99.22% | Val Top-1: 90.14% | Val Top-3: 98.19%
 
-🎉 Training Complete!
-Final Convergence: Train Acc: 99.22% | Best Val Top-1: 90.34% | Best Val Top-3: 98.39%
+🎉 Training Complete! Best Val Top-1 Accuracy: 90.34% | Best Val Top-3: 98.39%
 ```
 
 ---

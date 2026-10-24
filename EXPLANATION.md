@@ -190,8 +190,9 @@ The model was trained on Kaggle using:
 - **Precision**: PyTorch `torch.amp.autocast('cuda')` with `torch.amp.GradScaler('cuda')`.
 - **Loss Function**: Cross-Entropy with label smoothing $\epsilon = 0.05$.
 - **Validation Outcome**:
-  - **Top-1 Accuracy**: **94.98%**
-  - **Top-3 Accuracy**: **99.20%**
+  - **Top-1 Accuracy**: **90.34%** (Best Epoch 11)
+  - **Top-3 Accuracy**: **98.39%** (Differential Diagnosis standard)
+  - **Final Training Accuracy**: **99.22%** (Final Loss: 0.3778)
   - **Inference Latency**: **14.2 ms** (CPU compatible, edge-deployable).
 
 ---
@@ -268,7 +269,7 @@ Evaluated under identical in-the-wild foliar conditions against published PlantS
 
 | Backbone Architecture | Family | Params (M) | FLOPs (G) | Top-1 Accuracy | Top-5 Accuracy | Latency (ms) | Edge / Field Ready |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **ConvNeXt V2 Tiny (Ours)** | **Pure Modern ConvNet (GRN)** | **28.6** | **4.5** | **80.80% (All) / 94.98% (Top-20)** | **97.21%** | **14.2** | **Yes (Fastest)** |
+| **ConvNeXt V2 Tiny (Ours)** | **Pure Modern ConvNet (GRN)** | **28.6** | **4.5** | **90.34% (Top-20) / 80.80% (All)** | **98.39% (Top-3) / 97.21% (Top-5)** | **14.2** | **Yes (Fastest)** |
 | DINOv2 (ViT-B/14) | Self-Supervised ViT | 86.6 | 17.6 | 79.40% | 96.80% | 42.8 | No (Heavy) |
 | EVA-02 (ViT-Base) | MIM Pretrained ViT | 86.0 | 16.8 | 78.10% | 96.10% | 41.5 | No |
 | InternImage (DCNv3) | Deformable ConvNet | 80.0 | 15.2 | 77.50% | 95.70% | 38.6 | Marginal |

@@ -9,7 +9,8 @@
 [![ConvNeXt V2](https://img.shields.io/badge/ConvNeXt_V2-GRN_Tiny-4CAF50)](https://github.com/facebookresearch/ConvNeXt-V2)
 [![RT-DETR](https://img.shields.io/badge/RT--DETR-Lesion_Transformer-FF6F00)](https://github.com/lyuwenyu/RT-DETR)
 [![Meta SAM 2.1](https://img.shields.io/badge/Meta_SAM-2.1_Foundation-0668E1?logo=meta&logoColor=white)](https://ai.meta.com/sam2)
-[![Top-1 Accuracy](https://img.shields.io/badge/Top--1_Accuracy-94.98%25_(Top_20)-00E676?style=flat-square)](#)
+[![Top-1 Accuracy](https://img.shields.io/badge/Top--1_Accuracy-90.34%25_(Top_20)-00E676?style=flat-square)](#)
+[![Top-3 Accuracy](https://img.shields.io/badge/Top--3_Accuracy-98.39%25_(Differential)-brightgreen?style=flat-square)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **Department of Computer Science & Engineering**  
@@ -35,7 +36,7 @@
    - Generates **Grad-CAM++** visual attention heatmaps highlighting the exact morphological features guiding the neural prediction.
 3. **Stage 03 — Fine-Grained Pathology Classification (ConvNeXt V2 Tiny)**:
    - Powered by Global Response Normalization (GRN) ([`trained data/best_convnextv2_top20.pth`](file:///C:/projects/leaf%20model%20training/trained%20data/best_convnextv2_top20.pth)).
-   - Trained across **20 distinct, non-overlapping crop pathologies** across 20 distinct crops, achieving **94.98% Top-1 validation accuracy**.
+   - Trained across **20 distinct, non-overlapping crop pathologies** across 20 distinct crops, achieving **90.34% Top-1** and **98.39% Top-3** validation accuracy (**99.22% final training accuracy**).
 
 > 💡 **For full mathematical formulas, loss formulations, and architectural diagrams, see [explanation.md](explanation.md).**
 
@@ -47,8 +48,10 @@ Evaluated against published PlantSeg baseline models on an **NVIDIA Tesla GPU**:
 
 | Metric | Score | Clinical / Benchmark Standard |
 | :--- | :---: | :--- |
-| **Top-1 Accuracy (Top-20 Curated)** | **94.98%** | Clinical diagnostic safety standard (>90.0%) |
-| **Top-3 Accuracy (Differential Dx)** | **99.20%** | Comprehensive differential diagnosis coverage |
+| **Top-1 Accuracy (Top-20 Curated)** | **90.34%** | Clinical diagnostic safety standard (>90.0%) |
+| **Top-3 Accuracy (Differential Dx)** | **98.39%** | Comprehensive differential diagnosis coverage |
+| **Final Training Accuracy** | **99.22%** | High convergence on natural foliar pathology |
+| **Final Training Loss** | **0.3778** | CrossEntropyLoss with Label Smoothing ($\alpha=0.05$) |
 | **Top-1 Accuracy (Full 115-Class)** | **80.80%** | Exceeds published PlantSeg baseline (74.8%–79.4%) |
 | **Inference Latency** | **14.2 ms** | Real-time edge & CPU compatible |
 | **Lesion Localization Recall** | **91.4%** | Fine-tuned RT-DETR-L transformer |
@@ -58,7 +61,7 @@ Evaluated against published PlantSeg baseline models on an **NVIDIA Tesla GPU**:
 
 | Neural Backbone Architecture | Family | Parameters | FLOPs | Top-1 Accuracy | Latency | Edge Ready |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **ConvNeXt V2 Tiny (Ours / Active)** | **Modern ConvNet (GRN)** | **28.6M** | **4.5G** | **94.98%** | **14.2 ms** | **Yes** |
+| **ConvNeXt V2 Tiny (Ours / Active)** | **Modern ConvNet (GRN)** | **28.6M** | **4.5G** | **90.34% (Top-20) / 80.80% (All)** | **14.2 ms** | **Yes** |
 | DINOv2 (ViT-B/14) | Self-Supervised ViT | 86.6M | 17.6G | 79.40% | 42.8 ms | No |
 | EVA-02 (ViT-Base) | MIM Pretrained ViT | 86.0M | 16.8G | 78.10% | 41.5 ms | No |
 | InternImage-T | Deformable ConvNet | 30.0M | 5.0G | 79.10% | 31.0 ms | Marginal |
@@ -103,7 +106,7 @@ leaf model training/
 ├── sam2.1_t.pt                                # Meta SAM 2.1 zero-shot foundation model (78.1 MB)
 │
 ├── trained data/                              # Active trained model checkpoints
-│   ├── best_convnextv2_top20.pth              # ConvNeXt V2 (Top-20 distinct pathologies, >94% acc)
+│   ├── best_convnextv2_top20.pth              # ConvNeXt V2 (Top-20 distinct pathologies, 90.34% Top-1)
 │   ├── best_rtdetr_leaf_disease.pt            # Fine-tuned RT-DETR-L foliar lesion detector
 │   ├── top20_disease_classes.json             # 20 curated non-overlapping class names
 │   └── kaggle_train_convnextv2_top20.ipynb    # Kaggle P100/T4 training notebook
