@@ -151,6 +151,8 @@ leaf model training/
 
 ## 🚀 5. Getting Started & Setup
 
+> 💡 **For a comprehensive, foolproof step-by-step setup guide on any new device (including Git LFS, CUDA GPU, and troubleshooting), see [SETUP.md](SETUP.md).**
+
 ### Prerequisites
 - Python 3.10, 3.11, or 3.12
 - Git
