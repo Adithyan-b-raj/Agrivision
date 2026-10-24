@@ -135,9 +135,33 @@ source venv/bin/activate
 ```
 
 ### 3. Install Dependencies
+
+You can install all dependencies via `requirements.txt`:
 ```bash
 pip install -r requirements.txt
 ```
+
+#### Detailed Package Breakdown
+If you prefer installing packages individually, or need custom GPU acceleration:
+
+| Category | Packages | Command / Purpose |
+| :--- | :--- | :--- |
+| **Deep Learning & Backbones** | `torch`, `torchvision`, `timm` | Core PyTorch inference engine & `convnextv2_tiny` backbone |
+| **Detection & Vision** | `ultralytics`, `opencv-python-headless`, `pillow`, `numpy` | RT-DETR detection, image processing & Grad-CAM++ maps |
+| **Frontend Workstation** | `streamlit` | Agronomic clinical dashboard UI |
+| **Speech (STT / TTS) & Language**| `gTTS`, `deep-translator` | Google Text-to-Speech audio synthesizer & translation |
+| **Clinical PDF Export** | `fpdf2` | Pathological report generator with treatment protocols |
+| **Google Auth & Env Config** | `google-auth`, `google-auth-oauthlib`, `requests`, `python-dotenv` | Google OAuth 2.0 flow & `.env` credential management |
+
+```bash
+# Manual installation command:
+pip install streamlit torch torchvision timm ultralytics opencv-python-headless pillow numpy gTTS deep-translator fpdf2 python-dotenv google-auth google-auth-oauthlib requests
+```
+
+> **Note for NVIDIA GPU users:** To enable CUDA hardware acceleration for PyTorch locally:
+> ```bash
+> pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+> ```
 
 ### 4. Configure Google OAuth 2.0 Credentials
 Create a `.env` file in the project root:
