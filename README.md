@@ -218,7 +218,7 @@ To re-train or fine-tune the models on your own GPU:
 
 ## 👨‍💻 8. Authors & Project Credits
 
-- **Adithyan B. Raj** — *Department of Computer Science & Engineering, St. Thomas Institute for Science & Technology (STIST), Trivandrum*
+- **[Name]** — *Department of Computer Science & Engineering, St. Thomas Institute for Science & Technology (STIST), Trivandrum*
 - **Laboratory**: *STIST Agri-Labs & Field Extension Division*
 
 ---
