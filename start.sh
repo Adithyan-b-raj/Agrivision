@@ -19,22 +19,9 @@ else
 fi
 echo "[*] Detected Python: $($PY_CMD --version)"
 
-# 2. Check and pull Git LFS model weights
-echo "[*] Checking AI model weights..."
+# 2. Try Git LFS pull if Git LFS is available
 if command -v git-lfs &>/dev/null || command -v git &>/dev/null; then
     git lfs pull 2>/dev/null || true
-fi
-
-if [ -f "trained data/best_convnextv2_top20.pth" ]; then
-    FILE_SIZE=$(wc -c < "trained data/best_convnextv2_top20.pth" 2>/dev/null || echo "0")
-    if [ "$FILE_SIZE" -lt 10000000 ]; then
-        echo ""
-        echo "[WARNING] Model file appears to be a Git LFS text pointer ($FILE_SIZE bytes)."
-        echo "If you downloaded as ZIP: install git-lfs and run: git lfs pull"
-        echo ""
-    else
-        echo "[*] Deep learning weights verified ($FILE_SIZE bytes)."
-    fi
 fi
 
 # 3. Setup .env file if missing
@@ -54,7 +41,11 @@ echo "[*] Installing required packages from requirements.txt..."
 ./venv/bin/pip install --upgrade pip >/dev/null 2>&1 || true
 ./venv/bin/pip install -r requirements.txt
 
-# 6. Launch Application and open browser
+# 6. Auto-download model weights if downloaded as ZIP (Resolves Git LFS pointers automatically)
+echo "[*] Verifying deep learning weights (auto-resolves ZIP download pointers if needed)..."
+./venv/bin/python -c "from src.models.loaders import load_trained_convnext_model, load_rtdetr_model, load_sam2_model; load_trained_convnext_model(); load_rtdetr_model(); load_sam2_model()"
+
+# 7. Launch Application and open browser
 echo ""
 echo "============================================================"
 echo "  🚀 Launching AgriVision Pro Workstation"

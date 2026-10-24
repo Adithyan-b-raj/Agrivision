@@ -8,9 +8,50 @@ import json
 from functools import lru_cache
 from src.config import BASE_DIR, TRAINED_DATA_DIR, DISEASE_CLASSES_PATH, TOP20_CLASSES_PATH, TOP40_CLASSES_PATH
 
+RAW_MODEL_URLS = {
+    "best_convnextv2_top20.pth": "https://github.com/Adithyan-b-raj/Agrivision/raw/main/trained%20data/best_convnextv2_top20.pth",
+    "best_rtdetr_leaf_disease.pt": "https://github.com/Adithyan-b-raj/Agrivision/raw/main/trained%20data/best_rtdetr_leaf_disease.pt",
+    "sam2.1_t.pt": "https://github.com/Adithyan-b-raj/Agrivision/raw/main/sam2.1_t.pt",
+    "top20_disease_classes.json": "https://github.com/Adithyan-b-raj/Agrivision/raw/main/trained%20data/top20_disease_classes.json"
+}
+
+def ensure_model_file_valid(file_path: str, model_key: str):
+    """
+    Checks if a model file is missing or is an un-pulled Git LFS text pointer (< 1 MB).
+    If so, automatically downloads the full binary weights from GitHub raw release storage.
+    Ensures seamless execution even when users click 'Download ZIP' from GitHub without Git LFS.
+    """
+    raw_url = RAW_MODEL_URLS.get(model_key)
+    if not raw_url:
+        return
+    
+    is_pointer_or_missing = not os.path.exists(file_path) or os.path.getsize(file_path) < 1000000
+    if is_pointer_or_missing:
+        print(f"[*] Auto-downloading full {model_key} weights from GitHub (resolving LFS pointer)...")
+        try:
+            import requests
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with requests.get(raw_url, stream=True, timeout=120) as r:
+                r.raise_for_status()
+                with open(file_path, "wb") as f:
+                    for chunk in r.iter_content(chunk_size=1024 * 1024):
+                        if chunk:
+                            f.write(chunk)
+            print(f"✅ Successfully downloaded {model_key} ({os.path.getsize(file_path)} bytes)!")
+        except Exception as e:
+            print(f"[!] Notice: Could not auto-download {model_key}: {e}")
+
+
 @lru_cache(maxsize=1)
 def load_trained_convnext_model():
     """Dynamically loads ConvNeXt V2 model checkpoint (prefers Top-20 high-accuracy model from trained data/, else fallback)."""
+    # Ensure Top-20 model is valid binary (auto-downloads if downloaded as GitHub ZIP)
+    target_top20 = os.path.join(TRAINED_DATA_DIR, "best_convnextv2_top20.pth")
+    target_json = os.path.join(TRAINED_DATA_DIR, "top20_disease_classes.json")
+    ensure_model_file_valid(target_top20, "best_convnextv2_top20.pth")
+    if not os.path.exists(target_json) or os.path.getsize(target_json) < 10:
+        ensure_model_file_valid(target_json, "top20_disease_classes.json")
+
     weights_path = ""
     json_path = TOP20_CLASSES_PATH
     
@@ -86,6 +127,9 @@ def load_trained_convnext_model():
 @lru_cache(maxsize=1)
 def load_rtdetr_model():
     """Loads RT-DETR (prefers fine-tuned leaf disease checkpoint from trained data/, else standard RT-DETR)."""
+    target_rtdetr = os.path.join(TRAINED_DATA_DIR, "best_rtdetr_leaf_disease.pt")
+    ensure_model_file_valid(target_rtdetr, "best_rtdetr_leaf_disease.pt")
+
     try:
         from ultralytics import RTDETR
         candidates = [
@@ -108,6 +152,9 @@ def load_rtdetr_model():
 @lru_cache(maxsize=1)
 def load_sam2_model():
     """Loads Segment Anything Model 2 (Meta SAM 2.1 zero-shot foundation model)."""
+    target_sam = os.path.join(BASE_DIR, "sam2.1_t.pt")
+    ensure_model_file_valid(target_sam, "sam2.1_t.pt")
+
     try:
         from ultralytics import SAM
         for s_dir in [TRAINED_DATA_DIR, BASE_DIR]:
